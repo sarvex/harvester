@@ -9,10 +9,6 @@ import (
 	"github.com/rancher/wrangler/pkg/data"
 )
 
-func GetUnstructuredConditions(obj map[string]interface{}) []Condition {
-	return getConditions(obj)
-}
-
 func getRawConditions(obj data.Object) []data.Object {
 	statusAnn := obj.String("metadata", "annotations", "cattle.io/status")
 	if statusAnn != "" {
@@ -26,47 +22,29 @@ func getRawConditions(obj data.Object) []data.Object {
 
 func getConditions(obj data.Object) (result []Condition) {
 	for _, condition := range getRawConditions(obj) {
-		result = append(result, Condition{Object: condition})
+		result = append(result, Condition{d: condition})
 	}
 	return
 }
 
 type Condition struct {
-	data.Object
-}
-
-func NewCondition(conditionType, status, reason, message string) Condition {
-	return Condition{
-		Object: map[string]interface{}{
-			"type":    conditionType,
-			"status":  status,
-			"reason":  reason,
-			"message": message,
-		},
-	}
+	d data.Object
 }
 
 func (c Condition) Type() string {
-	return c.String("type")
+	return c.d.String("type")
 }
 
 func (c Condition) Status() string {
-	return c.String("status")
+	return c.d.String("status")
 }
 
 func (c Condition) Reason() string {
-	return c.String("reason")
+	return c.d.String("reason")
 }
 
 func (c Condition) Message() string {
-	return c.String("message")
-}
-
-func (c Condition) Equals(other Condition) bool {
-	return c.Type() == other.Type() &&
-		c.Status() == other.Status() &&
-		c.Reason() == other.Reason() &&
-		c.Message() == other.Message()
+	return c.d.String("message")
 }
 
 func NormalizeConditions(runtimeObj runtime.Object) {
@@ -84,7 +62,7 @@ func NormalizeConditions(runtimeObj runtime.Object) {
 	for _, condition := range obj.Slice("status", "conditions") {
 		var summary Summary
 		for _, summarizer := range ConditionSummarizers {
-			summary = summarizer(obj, []Condition{{Object: condition}}, summary)
+			summary = summarizer(obj, []Condition{{d: condition}}, summary)
 		}
 		condition.Set("error", summary.Error)
 		condition.Set("transitioning", summary.Transitioning)

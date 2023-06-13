@@ -36,7 +36,6 @@ type FactoryOptions struct {
 	Resync                  time.Duration
 	SharedCacheFactory      cache.SharedCacheFactory
 	SharedControllerFactory controller.SharedControllerFactory
-	HealthCallback          func(bool)
 }
 
 func NewFactoryFromConfigWithOptions(config *rest.Config, opts *FactoryOptions) (*Factory, error) {
@@ -89,7 +88,6 @@ func (c *Factory) setControllerFactoryWithLock() error {
 		cacheFactory = cache.NewSharedCachedFactory(client, &cache.SharedCacheFactoryOptions{
 			DefaultNamespace: c.opts.Namespace,
 			DefaultResync:    c.opts.Resync,
-			HealthCallback:   c.opts.HealthCallback,
 		})
 	}
 

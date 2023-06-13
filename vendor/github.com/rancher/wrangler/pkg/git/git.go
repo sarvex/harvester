@@ -68,7 +68,7 @@ func (g *Git) LsRemote(branch string, commit string) (string, error) {
 	}
 
 	output := &bytes.Buffer{}
-	if err := g.gitCmd(output, "ls-remote", g.URL, formatRefForBranch(branch)); err != nil {
+	if err := g.gitCmd(output, "ls-remote", "--", g.URL, formatRefForBranch(branch)); err != nil {
 		return "", err
 	}
 
@@ -97,9 +97,9 @@ func (g *Git) Head(branch string) (string, error) {
 // Clone runs git clone with depth 1
 func (g *Git) Clone(branch string) error {
 	if branch == "" {
-		return g.git("clone", "--depth=1", "-n", g.URL, g.Directory)
+		return g.git("clone", "--depth=1", "-n", "--", g.URL, g.Directory)
 	}
-	return g.git("clone", "--depth=1", "-n", "--branch", branch, g.URL, g.Directory)
+	return g.git("clone", "--depth=1", "-n", "--branch="+branch, "--", g.URL, g.Directory)
 }
 
 // Update updates git repo if remote sha has changed
@@ -130,7 +130,7 @@ func (g *Git) Update(branch string) (string, error) {
 
 // Ensure runs git clone, clean DIRTY contents and fetch the latest commit
 func (g *Git) Ensure(commit string) error {
-	if err := g.clone(""); err != nil {
+	if err := g.clone("master"); err != nil {
 		return err
 	}
 
@@ -298,18 +298,18 @@ func (g *Git) clone(branch string) error {
 		return fmt.Errorf("failed to remove directory %s: %v", g.Directory, err)
 	}
 
-	return g.Clone(branch)
+	return g.git("clone", "--depth=1", "-n", "--branch", branch, g.URL, g.Directory)
 }
 
 func (g *Git) fetchAndReset(rev string) error {
-	if err := g.git("-C", g.Directory, "fetch", "origin", rev); err != nil {
+	if err := g.git("-C", g.Directory, "fetch", "origin", "--", rev); err != nil {
 		return err
 	}
 	return g.reset("FETCH_HEAD")
 }
 
 func (g *Git) reset(rev string) error {
-	return g.git("-C", g.Directory, "reset", "--hard", rev)
+	return g.git("-C", g.Directory, "reset", "--hard", "--", rev)
 }
 
 func (g *Git) currentCommit() (string, error) {
@@ -317,7 +317,7 @@ func (g *Git) currentCommit() (string, error) {
 }
 
 func (g *Git) gitCmd(output io.Writer, args ...string) error {
-	kv := fmt.Sprintf("credential.helper=%s", "/bin/sh -c 'echo password=$GIT_PASSWORD'")
+	kv := fmt.Sprintf("credential.helper=%s", `/bin/sh -c 'echo "password=$GIT_PASSWORD"'`)
 	cmd := exec.Command("git", append([]string{"-c", kv}, args...)...)
 	cmd.Env = append(os.Environ(), fmt.Sprintf("GIT_PASSWORD=%s", g.password))
 	stderrBuf := &bytes.Buffer{}
