@@ -41,15 +41,11 @@ func Print(out io.Writer, crds []CRD) error {
 
 func Objects(crds []CRD) (result []runtime.Object, err error) {
 	for _, crdDef := range crds {
-		if crdDef.Override == nil {
-			crd, err := crdDef.ToCustomResourceDefinition()
-			if err != nil {
-				return nil, err
-			}
-			result = append(result, crd)
-		} else {
-			result = append(result, crdDef.Override)
+		crd, err := crdDef.ToCustomResourceDefinition()
+		if err != nil {
+			return nil, err
 		}
+		result = append(result, &crd)
 	}
 	return
 }

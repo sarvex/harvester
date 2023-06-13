@@ -91,12 +91,4 @@ func NewFactoryFromConfigWithOptions(config *rest.Config, opts *FactoryOptions) 
 	}, err
 }
 
-func NewFactoryFromConfigWithOptionsOrDie(config *rest.Config, opts *FactoryOptions) *Factory {
-    f, err := NewFactoryFromConfigWithOptions(config, opts)
-	if err != nil {
-		panic(err)
-	}
-	return f
-}
-
 `
